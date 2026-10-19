@@ -1,0 +1,27 @@
+# Python dependencies for Daily Fresher Job Discovery Agent
+# Compatible with Python 3.11+ on Windows, Linux, and macOS
+
+# Data validation, settings, and modeling
+pydantic>=2.7.0,<3.0.0
+pydantic-settings>=2.2.0,<3.0.0
+
+# HTTP client with async/sync support, connection pooling, and timeout controls
+httpx>=0.27.0,<1.0.0
+
+# HTML parsing for job verification and metadata extraction
+beautifulsoup4>=4.12.0,<5.0.0
+
+# URL and domain parsing
+tldextract>=5.1.0,<6.0.0
+
+# Environment variables
+python-dotenv>=1.0.0,<2.0.0
+
+# Optional Google Gen AI SDK (used only when GEMINI_API_KEY is configured)
+google-genai>=2.30.1
+
+# Testing framework and mocking
+pytest>=8.1.0,<9.0.0
+pytest-mock>=3.14.0,<4.0.0
+pytest-asyncio>=0.23.0,<1.0.0
+respx>=0.21.0,<1.0.0
