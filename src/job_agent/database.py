@@ -262,6 +262,8 @@ class Database:
                 )
                 return False, has_changed
 
+    upsert_job = save_job
+
     def get_job_by_url(self, normalized_url: str) -> VerifiedJob | None:
         """Retrieve a job by its normalized URL."""
         with self.get_connection() as conn:
@@ -415,6 +417,45 @@ class Database:
                 "total_alerted": alerted,
                 "total_runs": runs,
             }
+
+    def get_recent_verified_jobs(self, limit: int = 5) -> list[VerifiedJob]:
+        """Fetch the most recent verified opportunities."""
+        with self.get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT * FROM jobs
+                WHERE verification_status = ?
+                ORDER BY first_seen_at DESC, relevance_score DESC
+                LIMIT ?
+                """,
+                (VerificationStatus.VERIFIED_ACTIVE.value, limit)
+            )
+            rows = cur.fetchall()
+            return [self._row_to_verified_job(r) for r in rows]
+
+    def search_jobs(self, query: str, limit: int = 5) -> list[VerifiedJob]:
+        """Search verified opportunities safely by keyword."""
+        clean_q = f"%{query.strip().lower()}%"
+        with self.get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT * FROM jobs
+                WHERE verification_status = ?
+                  AND (
+                    LOWER(title) LIKE ?
+                    OR LOWER(employer_name) LIKE ?
+                    OR LOWER(matched_skills) LIKE ?
+                    OR LOWER(description_summary) LIKE ?
+                  )
+                ORDER BY relevance_score DESC, first_seen_at DESC
+                LIMIT ?
+                """,
+                (VerificationStatus.VERIFIED_ACTIVE.value, clean_q, clean_q, clean_q, clean_q, limit)
+            )
+            rows = cur.fetchall()
+            return [self._row_to_verified_job(r) for r in rows]
 
     @staticmethod
     def _row_to_verified_job(row: sqlite3.Row) -> VerifiedJob:

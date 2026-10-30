@@ -74,6 +74,7 @@ class Settings(BaseSettings):
         profile = CandidateProfile(
             graduation_batch=self.target_graduation_batch,
             allowed_batches=[
+                self.target_graduation_batch - 2,
                 self.target_graduation_batch - 1,
                 self.target_graduation_batch,
                 self.target_graduation_batch + 1
@@ -82,7 +83,8 @@ class Settings(BaseSettings):
             target_tracks=[
                 CareerTrack.AI_ML,
                 CareerTrack.SOFTWARE_BACKEND,
-                CareerTrack.MASS_HIRING
+                CareerTrack.MASS_HIRING,
+                CareerTrack.OTHER
             ]
         )
         return profile

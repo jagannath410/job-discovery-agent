@@ -295,6 +295,16 @@ def main() -> None:
         action="store_true",
         help="Display recent execution statistics and summary metrics from SQLite."
     )
+    parser.add_argument(
+        "--listen",
+        action="store_true",
+        help="Run interactive Telegram bot poller to listen for commands (/latest, /search, /stats, /run) from your phone."
+    )
+    parser.add_argument(
+        "--security-audit",
+        action="store_true",
+        help="Execute automated security and vulnerability audit suite (SSRF, SQLi, Prompt Injection, Credential Isolation)."
+    )
 
     args = parser.parse_args()
 
@@ -302,6 +312,17 @@ def main() -> None:
     if args.check_config:
         success = check_configuration()
         sys.exit(0 if success else 1)
+
+    if args.security_audit:
+        from src.job_agent.security_audit import run_security_audit
+        passed = run_security_audit()
+        sys.exit(0 if passed else 1)
+
+    if args.listen:
+        from src.job_agent.bot_listener import TelegramBotListener
+        listener = TelegramBotListener()
+        listener.run_polling()
+        sys.exit(0)
 
     if args.show_stats:
         show_statistics()

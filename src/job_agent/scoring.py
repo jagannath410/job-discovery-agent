@@ -70,20 +70,20 @@ def score_job(
         breakdown["role_track_match"] = w_role
         explanation_parts.append("Target track: IT Services Trainee / Mass Hiring")
     elif job.career_track == CareerTrack.SOFTWARE_BACKEND:
-        breakdown["role_track_match"] = int(w_role * 0.9)
-        explanation_parts.append("Target track: Python Backend & Software Engineering")
+        breakdown["role_track_match"] = int(w_role * 0.95)
+        explanation_parts.append("Target track: Software Engineering & Developer")
     else:
-        breakdown["role_track_match"] = int(w_role * 0.4)
-        explanation_parts.append("General Engineering role")
+        breakdown["role_track_match"] = int(w_role * 0.75)
+        explanation_parts.append("General Tech & Engineering role")
 
     # 3. Technical Skills Alignment (max: scoring_w.technical_skills, default 20)
     w_skills = scoring_w.technical_skills
     matched_count = len(job.matched_skills)
-    has_python = "Python" in job.matched_skills
+    has_core_cs = any(s in job.matched_skills for s in ("Python", "Java", "C/C++", "SQL / Database", "DSA & Problem Solving", "JavaScript / Web", "OOP & Core CS", "Git"))
     has_ml = any(s in job.matched_skills for s in ("Machine Learning", "Deep Learning", "Generative AI", "LLM", "RAG"))
 
     skill_score = min(w_skills, matched_count * 5)
-    if has_python and skill_score < w_skills:
+    if has_core_cs and skill_score < w_skills:
         skill_score = min(w_skills, skill_score + 3)
     if has_ml and skill_score < w_skills:
         skill_score = min(w_skills, skill_score + 2)

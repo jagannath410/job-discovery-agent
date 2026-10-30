@@ -1,6 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-title Daily Fresher Job Discovery Agent
+title Daily Fresher Job Discovery Agent (2027 Batch)
 
 :: Ensure we are in the script's directory
 cd /d "%~dp0"
@@ -27,17 +27,20 @@ if not "%~1"=="" (
 :menu
 cls
 echo ============================================================
-echo   DAILY FRESHER JOB DISCOVERY AGENT (2026 Batch)
+echo   DAILY FRESHER JOB DISCOVERY AGENT (2027 Batch - CS & Tech)
 echo ============================================================
 echo   1. Run Daily Job Discovery ^& Send Alerts (--once)
 echo   2. Run Dry-Run Mode (Test discovery without Telegram alerts)
-echo   3. Check System Configuration ^& Diagnostics
-echo   4. Show Database Statistics ^& Historical Runs
-echo   5. Test Telegram Bot Connection
-echo   6. Run All Automated Pytest Tests (27 tests)
-echo   7. Exit
+echo   3. Start Interactive Phone Listener (Respond to /latest, /search, /run)
+echo   4. Run Automated Security ^& Vulnerability Audit (6/6 Checks)
+echo   5. Check System Configuration ^& Diagnostics
+echo   6. Show Database Statistics ^& Historical Runs
+echo   7. Test Telegram Bot Connection
+echo   8. Install Daily Auto-Run (Windows Task Scheduler at 8:30 AM)
+echo   9. Run All Automated Pytest Tests (31 tests)
+echo   10. Exit
 echo ============================================================
-set /p choice="Select an option (1-7): "
+set /p choice="Select an option (1-10): "
 
 if "%choice%"=="1" (
     echo.
@@ -55,35 +58,56 @@ if "%choice%"=="2" (
 )
 if "%choice%"=="3" (
     echo.
+    echo [*] Starting interactive bot listener...
+    python main.py --listen
+    pause
+    goto menu
+)
+if "%choice%"=="4" (
+    echo.
+    echo [*] Running full system security audit...
+    python main.py --security-audit
+    pause
+    goto menu
+)
+if "%choice%"=="5" (
+    echo.
     echo [*] Checking configuration...
     python main.py --check-config
     pause
     goto menu
 )
-if "%choice%"=="4" (
+if "%choice%"=="6" (
     echo.
     echo [*] Fetching database metrics...
     python main.py --show-stats
     pause
     goto menu
 )
-if "%choice%"=="5" (
+if "%choice%"=="7" (
     echo.
     echo [*] Dispatching Telegram test notification...
     python main.py --test-telegram
     pause
     goto menu
 )
-if "%choice%"=="6" (
+if "%choice%"=="8" (
     echo.
-    echo [*] Executing test suite...
-    python -m pytest -v
+    echo [*] Installing Windows Task Scheduler daily job...
+    powershell -ExecutionPolicy Bypass -File "scripts\setup_schedule.ps1"
     pause
     goto menu
 )
-if "%choice%"=="7" goto :end
+if "%choice%"=="9" (
+    echo.
+    echo [*] Executing test suite...
+    pytest -v
+    pause
+    goto menu
+)
+if "%choice%"=="10" goto :end
 
-echo Invalid choice. Please choose 1 to 7.
+echo Invalid choice. Please choose 1 to 10.
 timeout /t 2 >nul
 goto menu
 

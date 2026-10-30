@@ -15,17 +15,27 @@ from src.job_agent.sources.base import BaseDiscoverySource
 
 # Selected tech companies and AI organizations that provide public ATS job feeds
 DEFAULT_GREENHOUSE_BOARDS = [
-    {"employer": "BrowserStack", "board": "browserstack"},
-    {"employer": "Postman", "board": "postman"},
-    {"employer": "Razorpay", "board": "razorpay"},
+    {"employer": "Groww", "board": "groww"},
+    {"employer": "Slice", "board": "slice"},
+    {"employer": "InMobi", "board": "inmobi"},
+    {"employer": "HackerRank", "board": "hackerrank"},
+    {"employer": "Thoughtworks", "board": "thoughtworks"},
+    {"employer": "Rubrik", "board": "rubrik"},
+    {"employer": "Stripe", "board": "stripe"},
 ]
 
 DEFAULT_LEVER_BOARDS = [
     {"employer": "CRED", "company": "cred"},
+    {"employer": "Pocket FM", "company": "pocketfm"},
+    {"employer": "Hotstar", "company": "hotstar"},
+    {"employer": "FamPay", "company": "fampay"},
 ]
 
 DEFAULT_ASHBY_BOARDS = [
     {"employer": "Sierra", "board": "sierra"},
+    {"employer": "Ramp", "board": "ramp"},
+    {"employer": "Replit", "board": "replit"},
+    {"employer": "Perplexity", "board": "perplexity"},
 ]
 
 
@@ -38,10 +48,12 @@ class ATSDiscoverySource(BaseDiscoverySource):
         self,
         greenhouse_boards: list[dict[str, str]] | None = None,
         lever_boards: list[dict[str, str]] | None = None,
+        ashby_boards: list[dict[str, str]] | None = None,
         client: httpx.Client | None = None
     ) -> None:
         self.greenhouse_boards = greenhouse_boards or DEFAULT_GREENHOUSE_BOARDS
         self.lever_boards = lever_boards or DEFAULT_LEVER_BOARDS
+        self.ashby_boards = ashby_boards or DEFAULT_ASHBY_BOARDS
         self.client = client or httpx.Client(
             timeout=settings.http_timeout_seconds,
             headers={
@@ -128,6 +140,42 @@ class ATSDiscoverySource(BaseDiscoverySource):
                     logger.debug(f"Lever board {company} returned status {resp.status_code}")
             except Exception as exc:
                 logger.warning(f"Error querying Lever board '{company}': {exc}")
+
+        # 3. Fetch Ashby boards
+        for item in self.ashby_boards:
+            emp = item["employer"]
+            board = item["board"]
+            url = f"https://api.ashbyhq.com/posting-api/job-board/{board}"
+            try:
+                resp = self.client.get(url)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    jobs = data.get("jobs", [])
+                    for job in jobs:
+                        title = job.get("title", "")
+                        job_url = job.get("jobUrl")
+                        job_id = str(job.get("id"))
+                        loc = job.get("location")
+                        pub_date = job.get("publishedAt")
+
+                        if job_url and title:
+                            all_postings.append(
+                                RawJobPosting(
+                                    id=f"ashby_{board}_{job_id}",
+                                    title=title,
+                                    original_url=job_url,
+                                    employer_name=emp,
+                                    description="",
+                                    source_adapter="ashby_api",
+                                    location=loc,
+                                    publication_date=pub_date,
+                                    raw_metadata={"board": board, "ats": "Ashby"}
+                                )
+                            )
+                else:
+                    logger.debug(f"Ashby board {board} returned status {resp.status_code}")
+            except Exception as exc:
+                logger.warning(f"Error querying Ashby board '{board}': {exc}")
 
         logger.info(f"ATS direct discovery collected {len(all_postings)} raw postings.")
         return all_postings

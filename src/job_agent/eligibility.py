@@ -34,10 +34,12 @@ _FRESHER_KEYWORDS = [
     "fresher", "freshers", "entry level", "entry-level", "graduate trainee",
     "intern", "internship", "0-1 years", "0 - 1 years", "0 to 1 years",
     "no experience required", "junior", "associate", "new grad", "campus hiring",
-    "off campus", "trainee engineer", "get", "ase"
+    "off campus", "trainee engineer", "get", "ase", "software engineer intern",
+    "developer intern", "sde intern", "technical intern", "engineering intern",
+    "graduate engineer", "systems engineer", "programmer trainee"
 ]
 
-# Patterns for graduation batches (e.g. "2026 batch", "2026 passout", "batch of 2026", "2025/2026")
+# Patterns for graduation batches (e.g. "2026 batch", "2027 batch", "2027 passout", "batch of 2027")
 _BATCH_PATTERN = re.compile(
     r"\b(?:batch\s*(?:of)?\s*|passing\s*out\s*(?:in)?\s*|graduating\s*(?:in)?\s*|passout\s*(?:in)?\s*)?(202[4-8])\b",
     re.IGNORECASE
@@ -49,13 +51,22 @@ _DEGREE_PATTERNS = {
     "B.E.": re.compile(r"\b(b\.?e\.?|bachelor of engineering)\b", re.IGNORECASE),
     "M.Tech": re.compile(r"\b(m\.?tech|master of technology)\b", re.IGNORECASE),
     "MCA": re.compile(r"\b(mca|master of computer applications)\b", re.IGNORECASE),
-    "Computer Science": re.compile(r"\b(computer science|cs|cse|information technology|it)\b", re.IGNORECASE),
+    "Computer Science": re.compile(r"\b(computer science|cs|cse|information technology|it|software engineering)\b", re.IGNORECASE),
     "Data Science / AI": re.compile(r"\b(data science|artificial intelligence|ai/ml)\b", re.IGNORECASE),
+    "B.Sc / BCA": re.compile(r"\b(b\.?sc|bca|bachelor of computer applications)\b", re.IGNORECASE),
 }
 
-# Recognized technical skills
+# Recognized technical skills (expanded for all Computer Science domains)
 _SKILLS_KEYWORDS = {
     "Python": re.compile(r"\bpython\b", re.IGNORECASE),
+    "Java": re.compile(r"\b(java|core java|spring|springboot)\b", re.IGNORECASE),
+    "C/C++": re.compile(r"\b(c\+\+|cpp|\bc language\b)\b", re.IGNORECASE),
+    "JavaScript / Web": re.compile(r"\b(javascript|typescript|react|html|css|node\.?js|frontend|fullstack)\b", re.IGNORECASE),
+    "SQL / Database": re.compile(r"\b(sql|postgresql|postgres|mysql|sqlite|mongodb|dbms)\b", re.IGNORECASE),
+    "DSA & Problem Solving": re.compile(r"\b(data structures|algorithms|dsa|problem solving)\b", re.IGNORECASE),
+    "OOP & Core CS": re.compile(r"\b(oop|object oriented|operating systems?|computer networks?)\b", re.IGNORECASE),
+    "Git": re.compile(r"\b(git|github|gitlab)\b", re.IGNORECASE),
+    "Cloud & Linux": re.compile(r"\b(aws|azure|gcp|docker|linux|unix)\b", re.IGNORECASE),
     "Machine Learning": re.compile(r"\b(machine learning|ml)\b", re.IGNORECASE),
     "Deep Learning": re.compile(r"\b(deep learning|dl|neural networks)\b", re.IGNORECASE),
     "Generative AI": re.compile(r"\b(generative ai|genai|gen ai)\b", re.IGNORECASE),
@@ -63,9 +74,6 @@ _SKILLS_KEYWORDS = {
     "RAG": re.compile(r"\b(rag|retrieval augmented generation)\b", re.IGNORECASE),
     "LangChain": re.compile(r"\b(langchain|langgraph|llamaindex)\b", re.IGNORECASE),
     "FastAPI": re.compile(r"\b(fastapi|flask|django)\b", re.IGNORECASE),
-    "SQL": re.compile(r"\b(sql|postgresql|postgres|mysql|sqlite)\b", re.IGNORECASE),
-    "Git": re.compile(r"\b(git|github|gitlab)\b", re.IGNORECASE),
-    "DSA": re.compile(r"\b(data structures|algorithms|dsa|problem solving)\b", re.IGNORECASE),
     "PyTorch": re.compile(r"\b(pytorch|torch)\b", re.IGNORECASE),
     "TensorFlow": re.compile(r"\btensorflow\b", re.IGNORECASE),
 }
@@ -186,16 +194,22 @@ def detect_career_track(title: str, description: str = "") -> CareerTrack:
         "graduate engineer trainee", "get", "associate software engineer", "ase",
         "graduate trainee", "trainee software engineer", "national qualifier test",
         "tcs nqt", "off-campus", "campus drive", "national hiring", "nextstep",
-        "fresher hiring", "trainee"
+        "fresher hiring", "trainee", "systems engineer", "programmer analyst",
+        "associate engineer", "technical trainee", "entry level engineer"
     ]
     for kw in mass_hiring_keywords:
         if re.search(rf"\b{re.escape(kw)}\b", combined):
             return CareerTrack.MASS_HIRING
 
-    # Track A2: Python Backend / Software Engineering
+    # Track A2: Software Engineering & General Computer Science Roles
     backend_keywords = [
-        "python", "backend", "software engineer", "software developer", "sde",
-        "sde-1", "sde 1", "software engineer i", "junior developer", "api engineer"
+        "python", "java", "c++", "backend", "software engineer", "software developer", "sde",
+        "sde-1", "sde 1", "software engineer i", "junior developer", "api engineer",
+        "frontend", "front-end", "full stack", "fullstack", "web developer",
+        "software engineering intern", "sde intern", "developer intern",
+        "qa engineer", "sdet", "test engineer", "automation engineer",
+        "cloud engineer", "devops", "systems engineer", "database engineer",
+        "programmer", "computer science graduate", "software associate"
     ]
     for kw in backend_keywords:
         if re.search(rf"\b{re.escape(kw)}\b", combined):

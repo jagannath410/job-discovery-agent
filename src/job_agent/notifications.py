@@ -236,7 +236,7 @@ class TelegramNotifier:
             f"🧪 <b>Daily Fresher Job Discovery Agent</b>\n\n"
             f"✅ <b>Telegram Connection Test Successful!</b>\n"
             f"🕒 <b>Timestamp:</b> {now_str}\n"
-            f"🎯 <b>Target Profile:</b> 2026 Graduates | 0-1 yrs exp | AI/ML & Backend\n\n"
+            f"🎯 <b>Target Profile:</b> {settings.target_graduation_batch} Graduates | CS & Tech | 0-1 yrs exp\n\n"
             f"The agent is properly configured to send daily alerts."
         )
         return self.send_raw_message(test_msg)

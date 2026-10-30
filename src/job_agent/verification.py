@@ -125,24 +125,33 @@ def is_ip_private_or_internal(ip_str: str) -> bool:
         return False
 
 
+_DNS_SAFETY_CACHE: dict[str, bool] = {}
+
+
 def is_hostname_safe(hostname: str) -> bool:
     """
     Validate that hostname is not an internal/private address or SSRF destination.
     Rejects localhost, local domains, and hostnames resolving to private IPs.
+    Caches results to avoid repetitive DNS lookups across bulk job processing.
     """
     if not hostname:
         return False
 
     clean_host = hostname.strip().lower()
+    if clean_host in _DNS_SAFETY_CACHE:
+        return _DNS_SAFETY_CACHE[clean_host]
 
     # Reject localhost & common private internal domain suffixes
     if clean_host in ("localhost", "127.0.0.1", "::1", "0.0.0.0"):
+        _DNS_SAFETY_CACHE[clean_host] = False
         return False
     if clean_host.endswith((".localhost", ".local", ".internal", ".test", ".invalid")):
+        _DNS_SAFETY_CACHE[clean_host] = False
         return False
 
     # Check if host is an IP literal
     if is_ip_private_or_internal(clean_host):
+        _DNS_SAFETY_CACHE[clean_host] = False
         return False
 
     # Try resolving hostname via DNS to ensure it does not resolve to an internal IP (SSRF guard)
@@ -151,12 +160,12 @@ def is_hostname_safe(hostname: str) -> bool:
         for _, _, _, _, sockaddr in addr_info:
             resolved_ip = sockaddr[0]
             if is_ip_private_or_internal(resolved_ip):
+                _DNS_SAFETY_CACHE[clean_host] = False
                 return False
     except (socket.gaierror, socket.herror, OSError):
-        # In test environments or offline mode where hostname does not resolve,
-        # allow standard mock / web domains unless they are explicitly localhost/internal.
         pass
 
+    _DNS_SAFETY_CACHE[clean_host] = True
     return True
 
 
@@ -343,10 +352,39 @@ class JobVerifier:
         ats_provider = ats_or_emp if domain_cat == "TRUSTED_ATS" else None
 
         # -------------------------------------------------------------
+        # Fast Pre-Filter: Check if title explicitly indicates senior/lead role
+        # -------------------------------------------------------------
+        lower_title = raw_job.title.lower()
+        senior_indicators = [
+            r"\bsenior\b", r"\bsr\.?\b", r"\blead\b", r"\bprincipal\b", r"\bstaff\b",
+            r"\barchitect\b", r"\bdirector\b", r"\bmanager\b", r"\bvp\b", r"\bvice president\b",
+            r"\bhead of\b", r"\b5\+\s*years?\b", r"\b4\+\s*years?\b", r"\b3\+\s*years?\b"
+        ]
+        has_fresher_term = any(t in lower_title for t in ("intern", "fresher", "trainee", "entry", "graduate", "0-1", "junior", "ase", "get"))
+        if not has_fresher_term and any(re.search(pat, lower_title) for pat in senior_indicators):
+            evidence["rejection_reasons"].append(f"Title indicates senior role: '{raw_job.title}'")
+            return self._build_rejected_job(
+                raw_job,
+                norm_url,
+                source_domain,
+                VerificationStatus.REJECTED_EXPERIENCE,
+                evidence,
+                f"Senior role: {raw_job.title}"
+            )
+
+        # -------------------------------------------------------------
         # Check 3 & 4: Live Activity & Redirect Safety Validation
         # -------------------------------------------------------------
-        final_url, active_status, page_content, fetch_evidence = self._check_activity_and_redirects(norm_url)
-        evidence.update(fetch_evidence)
+        # If posting is from a verified direct ATS API (Greenhouse, Lever, Ashby),
+        # validate host safety without redundant slow HTTP re-fetching:
+        if domain_cat == "TRUSTED_ATS" and raw_job.source_adapter in ("greenhouse_api", "lever_api", "ashby_api"):
+            final_url = norm_url
+            active_status = VerificationStatus.VERIFIED_ACTIVE
+            page_content = raw_job.description or ""
+            evidence["checks_passed"].append("DIRECT_ATS_API_VERIFIED")
+        else:
+            final_url, active_status, page_content, fetch_evidence = self._check_activity_and_redirects(norm_url)
+            evidence.update(fetch_evidence)
 
         if active_status == VerificationStatus.EXPIRED:
             evidence["rejection_reasons"].append("Job page reported closed or expired.")
