@@ -13,29 +13,31 @@ from src.job_agent.models import RawJobPosting
 from src.job_agent.settings import settings
 from src.job_agent.sources.base import BaseDiscoverySource
 
-# Selected tech companies and AI organizations that provide public ATS job feeds
+# Selected Indian tech companies and fast-growing Indian startups with public ATS feeds
 DEFAULT_GREENHOUSE_BOARDS = [
+    {"employer": "Razorpay", "board": "razorpaysoftwareprivatelimited"},
     {"employer": "Groww", "board": "groww"},
-    {"employer": "Slice", "board": "slice"},
     {"employer": "InMobi", "board": "inmobi"},
     {"employer": "HackerRank", "board": "hackerrank"},
     {"employer": "Thoughtworks", "board": "thoughtworks"},
-    {"employer": "Rubrik", "board": "rubrik"},
-    {"employer": "Stripe", "board": "stripe"},
+    {"employer": "Porter", "board": "porter"},
+    {"employer": "Instawork", "board": "instawork"},
+    {"employer": "Rubrik India", "board": "rubrik"},
 ]
 
 DEFAULT_LEVER_BOARDS = [
+    {"employer": "Paytm", "company": "paytm"},
     {"employer": "CRED", "company": "cred"},
-    {"employer": "Pocket FM", "company": "pocketfm"},
-    {"employer": "Hotstar", "company": "hotstar"},
+    {"employer": "Meesho", "company": "meesho"},
+    {"employer": "Fi Money", "company": "fi"},
     {"employer": "FamPay", "company": "fampay"},
+    {"employer": "Pocket FM", "company": "pocketfm"},
 ]
 
 DEFAULT_ASHBY_BOARDS = [
-    {"employer": "Sierra", "board": "sierra"},
-    {"employer": "Ramp", "board": "ramp"},
-    {"employer": "Replit", "board": "replit"},
-    {"employer": "Perplexity", "board": "perplexity"},
+    {"employer": "Sarvam AI", "board": "sarvam"},
+    {"employer": "Atlan", "board": "atlan"},
+    {"employer": "SigNoz", "board": "signoz"},
 ]
 
 

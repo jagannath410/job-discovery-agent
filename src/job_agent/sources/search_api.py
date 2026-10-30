@@ -15,15 +15,15 @@ from src.job_agent.models import RawJobPosting
 from src.job_agent.settings import settings
 from src.job_agent.sources.base import BaseDiscoverySource
 
-# Target queries for both tracks
+# Target queries for Indian tech startups and fresher hiring tracks
 SEARCH_QUERIES = [
-    # Track A: AI / ML / Python Backend
-    'site:boards.greenhouse.io ("Machine Learning Intern" OR "AI Engineer" OR "Python Developer") India 2026',
-    'site:jobs.lever.co ("Data Science Intern" OR "AI Engineer Intern" OR "Junior Python") India',
-    'site:jobs.ashbyhq.com ("Software Engineer Intern" OR "AI Intern") India',
+    # Track A: AI / ML / Python Backend / Software Engineering in India
+    'site:boards.greenhouse.io ("Machine Learning Intern" OR "AI Engineer" OR "Python Developer" OR "Software Engineer") ("India" OR "Bengaluru" OR "Bangalore" OR "Gurgaon" OR "Hyderabad")',
+    'site:jobs.lever.co ("Data Science Intern" OR "AI Engineer" OR "Backend Developer" OR "Software Engineer") ("India" OR "Bengaluru" OR "Bangalore" OR "Pune")',
+    'site:jobs.ashbyhq.com ("Software Engineer" OR "AI Intern" OR "Backend Developer") ("India" OR "Bengaluru" OR "Remote")',
     # Track B: Mass Hiring & Trainee
-    'site:tcs.com "National Qualifier Test" 2026 fresher',
-    'site:accenture.com "Associate Software Engineer" 2026 entry level India',
+    'site:tcs.com "National Qualifier Test" fresher entry level India',
+    'site:accenture.com "Associate Software Engineer" fresher entry level India',
 ]
 
 

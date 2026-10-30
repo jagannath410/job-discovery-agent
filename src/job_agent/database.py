@@ -284,12 +284,55 @@ class Database:
                 return None
             return self._row_to_verified_job(row)
 
+    @staticmethod
+    def apply_company_diversity(
+        jobs: list[VerifiedJob],
+        max_per_company: int = 2,
+        limit: int | None = None
+    ) -> list[VerifiedJob]:
+        """
+        Filter and interleave jobs across distinct companies to prevent flooding
+        from any single employer and ensure diverse opportunities are presented.
+        """
+        if not jobs:
+            return []
+
+        # Group jobs by company (preserving relative score order within each company)
+        company_buckets: dict[str, list[VerifiedJob]] = {}
+        for j in jobs:
+            emp = (j.employer_name or "Unknown").strip().lower()
+            if emp not in company_buckets:
+                company_buckets[emp] = []
+            if len(company_buckets[emp]) < max_per_company:
+                company_buckets[emp].append(j)
+
+        # Round-robin interleave across companies to maximize diversity
+        diverse_jobs: list[VerifiedJob] = []
+        # Sort companies by the top score of their first job so highest quality appears first
+        sorted_companies = sorted(
+            company_buckets.keys(),
+            key=lambda c: company_buckets[c][0].relevance_score if company_buckets[c] else 0,
+            reverse=True
+        )
+
+        for slot in range(max_per_company):
+            for comp in sorted_companies:
+                bucket = company_buckets[comp]
+                if slot < len(bucket):
+                    diverse_jobs.append(bucket[slot])
+                    if limit is not None and len(diverse_jobs) >= limit:
+                        return diverse_jobs
+
+        return diverse_jobs
+
     def get_unalerted_verified_jobs(
         self,
         min_score: int = 60,
-        include_unconfirmed: bool = False
+        include_unconfirmed: bool = False,
+        max_per_company: int | None = None,
+        limit: int | None = None
     ) -> list[VerifiedJob]:
-        """Fetch active verified jobs that have not yet been sent to Telegram."""
+        """Fetch active verified jobs that have not yet been sent to Telegram, enforcing diversity."""
         with self.get_connection() as conn:
             cur = conn.cursor()
             allowed_statuses = [VerificationStatus.VERIFIED_ACTIVE.value]
@@ -306,7 +349,14 @@ class Database:
             """
             cur.execute(query, (*allowed_statuses, min_score))
             rows = cur.fetchall()
-            return [self._row_to_verified_job(r) for r in rows]
+            jobs = [self._row_to_verified_job(r) for r in rows]
+
+            if max_per_company is not None and max_per_company > 0:
+                jobs = self.apply_company_diversity(jobs, max_per_company=max_per_company, limit=limit)
+            elif limit is not None and limit > 0:
+                jobs = jobs[:limit]
+
+            return jobs
 
     def mark_job_alerted(self, job_id: str, timestamp_utc: str | None = None) -> None:
         """Mark a job as notified so it is not re-sent in future runs."""
@@ -418,8 +468,8 @@ class Database:
                 "total_runs": runs,
             }
 
-    def get_recent_verified_jobs(self, limit: int = 5) -> list[VerifiedJob]:
-        """Fetch the most recent verified opportunities."""
+    def get_recent_verified_jobs(self, limit: int = 5, max_per_company: int = 1) -> list[VerifiedJob]:
+        """Fetch the most recent verified opportunities, ensuring diverse companies."""
         with self.get_connection() as conn:
             cur = conn.cursor()
             cur.execute(
@@ -427,12 +477,13 @@ class Database:
                 SELECT * FROM jobs
                 WHERE verification_status = ?
                 ORDER BY first_seen_at DESC, relevance_score DESC
-                LIMIT ?
+                LIMIT 50
                 """,
-                (VerificationStatus.VERIFIED_ACTIVE.value, limit)
+                (VerificationStatus.VERIFIED_ACTIVE.value,)
             )
             rows = cur.fetchall()
-            return [self._row_to_verified_job(r) for r in rows]
+            jobs = [self._row_to_verified_job(r) for r in rows]
+            return self.apply_company_diversity(jobs, max_per_company=max_per_company, limit=limit)
 
     def search_jobs(self, query: str, limit: int = 5) -> list[VerifiedJob]:
         """Search verified opportunities safely by keyword."""

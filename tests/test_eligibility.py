@@ -144,3 +144,111 @@ def test_prompt_injection_in_job_description():
     assert "IGNORE ALL PREVIOUS INSTRUCTIONS" not in cleaned
     assert "[SAFETY_NEUTRALIZED]" in cleaned
     assert "Python Intern" in cleaned
+
+
+def test_non_tech_role_detection():
+    """Verify that non-engineering roles are correctly detected and excluded."""
+    from src.job_agent.eligibility import is_non_tech_role
+
+    assert is_non_tech_role("Copywriter") is True
+    assert is_non_tech_role("Creative Illustrator") is True
+    assert is_non_tech_role("Assistant Manager - Internal Audit") is True
+    assert is_non_tech_role("Business Development & Partnerships") is True
+    assert is_non_tech_role("Freelance Video Quality Reviewer") is True
+    assert is_non_tech_role("HR Intern") is True
+
+    # Tech roles must NOT be flagged as non-tech
+    assert is_non_tech_role("Software Engineer") is False
+    assert is_non_tech_role("AI Engineer Intern") is False
+    assert is_non_tech_role("Junior Python Backend Developer") is False
+    assert is_non_tech_role("Graduate Engineer Trainee") is False
+    assert is_non_tech_role("Frontend Developer Intern") is False
+    assert is_non_tech_role("QA Engineer") is False
+
+
+def test_india_location_filtering():
+    """Verify that Indian locations/Remote are accepted and foreign locations are rejected."""
+    from src.job_agent.eligibility import is_location_eligible_for_target_country
+
+    # Valid Indian and remote locations
+    ok, _ = is_location_eligible_for_target_country("Bengaluru, India")
+    assert ok is True
+    ok, _ = is_location_eligible_for_target_country("Pune / Hyderabad")
+    assert ok is True
+    ok, _ = is_location_eligible_for_target_country("Pan India")
+    assert ok is True
+    ok, _ = is_location_eligible_for_target_country("Remote - India")
+    assert ok is True
+    ok, _ = is_location_eligible_for_target_country("Remote")
+    assert ok is True
+
+    # Foreign locations without India
+    ok, reason = is_location_eligible_for_target_country("Tokyo")
+    assert ok is False
+    assert "outside target country" in reason
+
+    ok, reason = is_location_eligible_for_target_country("Mexico")
+    assert ok is False
+
+    ok, reason = is_location_eligible_for_target_country("San Francisco, CA")
+    assert ok is False
+
+    ok, reason = is_location_eligible_for_target_country("London")
+    assert ok is False
+
+    ok, reason = is_location_eligible_for_target_country("Toronto")
+    assert ok is False
+
+
+def test_company_diversity_balancing():
+    """Verify that apply_company_diversity limits per company and interleaves across companies."""
+    from src.job_agent.database import Database
+    from src.job_agent.models import VerifiedJob, CareerTrack, WorkMode, EmploymentType, VerificationStatus
+
+    jobs = [
+        VerifiedJob(
+            id=f"job_cred_{i}",
+            employer_name="CRED",
+            title=f"Engineer {i}",
+            normalized_url=f"https://jobs.lever.co/cred/{i}",
+            original_url=f"https://jobs.lever.co/cred/{i}",
+            source_domain="jobs.lever.co",
+            career_track=CareerTrack.SOFTWARE_BACKEND,
+            location="Bengaluru",
+            work_mode=WorkMode.ON_SITE,
+            employment_type=EmploymentType.FULL_TIME,
+            relevance_score=80 - i,
+            verification_status=VerificationStatus.VERIFIED_ACTIVE,
+            first_seen_at="2026-10-30T00:00:00Z",
+            last_checked_at="2026-10-30T00:00:00Z"
+        )
+        for i in range(5)
+    ] + [
+        VerifiedJob(
+            id=f"job_razorpay_{i}",
+            employer_name="Razorpay",
+            title=f"AI Engineer {i}",
+            normalized_url=f"https://job-boards.greenhouse.io/razorpay/{i}",
+            original_url=f"https://job-boards.greenhouse.io/razorpay/{i}",
+            source_domain="greenhouse.io",
+            career_track=CareerTrack.AI_ML,
+            location="Bengaluru",
+            work_mode=WorkMode.HYBRID,
+            employment_type=EmploymentType.FULL_TIME,
+            relevance_score=90 - i,
+            verification_status=VerificationStatus.VERIFIED_ACTIVE,
+            first_seen_at="2026-10-30T00:00:00Z",
+            last_checked_at="2026-10-30T00:00:00Z"
+        )
+        for i in range(3)
+    ]
+
+    # Max 2 per company
+    diverse = Database.apply_company_diversity(jobs, max_per_company=2, limit=10)
+    assert len(diverse) == 4  # 2 from Razorpay, 2 from CRED
+    # Verify interleaving: first job should be Razorpay, second CRED, third Razorpay, fourth CRED
+    assert diverse[0].employer_name == "Razorpay"
+    assert diverse[1].employer_name == "CRED"
+    assert diverse[2].employer_name == "Razorpay"
+    assert diverse[3].employer_name == "CRED"
+

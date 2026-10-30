@@ -108,10 +108,12 @@ def format_daily_report(jobs: list[VerifiedJob], date_str: str | None = None) ->
     track_mass = [j for j in jobs if j.career_track == CareerTrack.MASS_HIRING]
     track_other = [j for j in jobs if j not in track_ai and j not in track_backend and j not in track_mass]
 
+    unique_employers = len(set(j.employer_name for j in jobs))
     header = (
-        f"📢 <b>DAILY FRESHER JOB REPORT</b>\n\n"
+        f"📢 <b>DAILY FRESHER JOB REPORT (INDIA TECH & STARTUPS)</b>\n\n"
         f"📅 <b>Date:</b> {date_display}\n"
-        f"🎯 <b>New verified opportunities:</b> {len(jobs)}\n\n"
+        f"🎯 <b>New verified opportunities:</b> {len(jobs)} (across {unique_employers} companies)\n"
+        f"🇮🇳 <i>Curated Indian startups & top tech employers</i>\n\n"
     )
 
     sections: list[tuple[str, list[VerifiedJob]]] = [

@@ -8,6 +8,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
+from src.job_agent.eligibility import is_non_tech_role
 from src.job_agent.models import (
     CandidateProfile,
     CareerTrack,
@@ -73,8 +74,12 @@ def score_job(
         breakdown["role_track_match"] = int(w_role * 0.95)
         explanation_parts.append("Target track: Software Engineering & Developer")
     else:
-        breakdown["role_track_match"] = int(w_role * 0.75)
-        explanation_parts.append("General Tech & Engineering role")
+        if is_non_tech_role(job.title):
+            breakdown["role_track_match"] = 0
+            explanation_parts.append("Non-technical role")
+        else:
+            breakdown["role_track_match"] = int(w_role * 0.75)
+            explanation_parts.append("General Tech & Engineering role")
 
     # 3. Technical Skills Alignment (max: scoring_w.technical_skills, default 20)
     w_skills = scoring_w.technical_skills

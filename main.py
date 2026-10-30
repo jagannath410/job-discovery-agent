@@ -175,10 +175,12 @@ def run_pipeline(dry_run: bool = False) -> int:
         else:
             candidates_rejected += 1
 
-    # Step 3: Fetch Unalerted High-Relevance Opportunities
+    # Step 3: Fetch Unalerted High-Relevance Opportunities with Company Diversity
     jobs_to_alert = db.get_unalerted_verified_jobs(
         min_score=settings.min_relevance_score,
-        include_unconfirmed=settings.include_unconfirmed_alerts
+        include_unconfirmed=settings.include_unconfirmed_alerts,
+        max_per_company=settings.max_jobs_per_company,
+        limit=settings.max_daily_alerts
     )
 
     logger.info(

@@ -290,3 +290,82 @@ def evaluate_fresher_eligibility(
             )
 
     return (True, "Eligible", min_exp, batches, skills)
+
+
+# Non-technical / non-engineering role indicators
+_NON_TECH_PATTERNS = [
+    re.compile(r"\b(copywriter|copywriting|writer|scriptwriter|editorial|proof\s*reader|proofreader|proof\s*listener|digest|content\s*(?:specialist|creator|associate|writer|manager)?)\b", re.IGNORECASE),
+    re.compile(r"\b(illustrator|creative illustrator|graphic designer|animator|motion designer)\b", re.IGNORECASE),
+    re.compile(r"\b(business development|bde|bda|sales|account executive|partnership|growth|telesales)\b", re.IGNORECASE),
+    re.compile(r"\b(relationship manager|wealth manager|client success|customer support|customer care|customer experience|telecaller|bpo|cst)\b", re.IGNORECASE),
+    re.compile(r"\b(internal audit|auditor|compliance|procurement|buyer|vendor|finance|financial analyst|accountant|bill payments)\b", re.IGNORECASE),
+    re.compile(r"\b(human resources|hr executive|hr intern|recruiter|talent acquisition|people operations)\b", re.IGNORECASE),
+    re.compile(r"\b(video\s*editor|video\s*(?:quality\s*)?reviewer|reviewer|sketch\s*content|content\s*creator|audio\s*engineer)\b", re.IGNORECASE),
+    re.compile(r"\b(operations specialist|operations associate|business operations|ops associate|product operations)\b", re.IGNORECASE),
+]
+
+_INDIAN_LOCATIONS = [
+    "india", "bengaluru", "bangalore", "hyderabad", "pune", "mumbai", "delhi", "noida",
+    "gurgaon", "gurugram", "chennai", "kolkata", "ahmedabad", "jaipur", "kochi", "coimbatore",
+    "chandigarh", "indore", "bhopal", "pan india", "remote in india", "india (remote)",
+    "remote - india", "remote, india", "karnataka", "maharashtra", "telangana", "tamil nadu",
+    "uttar pradesh", "haryana", "anywhere in india"
+]
+
+
+def is_non_tech_role(title: str) -> bool:
+    """Check if the title indicates a non-engineering / non-technical role."""
+    t = title.lower()
+    tech_overrides = [
+        "software", "sde", "developer", "backend", "frontend", "full stack", "fullstack",
+        "data engineer", "data scientist", "machine learning", "ml engineer", "ai engineer",
+        "qa engineer", "sdet", "devops", "cloud engineer", "programmer", "systems engineer",
+        "graduate engineer trainee", "get", "associate software engineer", "ase", "technical",
+        "engineer trainee", "trainee software", "python"
+    ]
+    if any(k in t for k in tech_overrides):
+        return False
+
+    for pat in _NON_TECH_PATTERNS:
+        if pat.search(t):
+            return True
+    return False
+
+
+def is_location_eligible_for_target_country(
+    location: str | None,
+    title: str = "",
+    description: str = "",
+    target_country: str = "India"
+) -> tuple[bool, str]:
+    """
+    Check if the job location matches the target country (India) or is remote-friendly for India.
+    Rejects any locations outside India unless explicitly remote.
+    """
+    loc_str = (location or "").strip().lower()
+
+    # 1. If explicit location string is provided:
+    if loc_str and loc_str not in ("unknown", "flexible", "multiple", "n/a", "any"):
+        has_india_in_loc = any(ind in loc_str for ind in _INDIAN_LOCATIONS)
+        is_remote_in_loc = any(rem in loc_str for rem in ("remote", "work from home", "wfh", "anywhere"))
+
+        if has_india_in_loc:
+            return True, "India location confirmed"
+        if is_remote_in_loc:
+            return True, "Remote location"
+
+        # Explicit location was provided but is neither India nor Remote
+        return False, f"Location '{location}' is outside target country ({target_country})"
+
+    # 2. If location was unspecified, check description for explicit India location
+    full_context = f"{title} {description}".lower()
+    has_india = any(ind in full_context for ind in _INDIAN_LOCATIONS)
+    is_remote = any(rem in full_context for rem in ("remote in india", "india remote", "work from home"))
+
+    if has_india or is_remote:
+        return True, "India location found in description"
+
+    # If nothing is specified, accept as flexible
+    return True, "Flexible location"
+
+

@@ -53,6 +53,10 @@ class Settings(BaseSettings):
 
     # 4. Filters & Delivery
     min_relevance_score: int = Field(default=55, alias="MIN_RELEVANCE_SCORE")
+    max_jobs_per_company: int = Field(default=2, alias="MAX_JOBS_PER_COMPANY")
+    max_daily_alerts: int = Field(default=15, alias="MAX_DAILY_ALERTS")
+    enforce_india_location: bool = Field(default=True, alias="ENFORCE_INDIA_LOCATION")
+    exclude_non_tech_roles: bool = Field(default=True, alias="EXCLUDE_NON_TECH_ROLES")
     send_empty_report: bool = Field(default=True, alias="SEND_EMPTY_REPORT")
     include_unconfirmed_alerts: bool = Field(default=False, alias="INCLUDE_UNCONFIRMED_ALERTS")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")

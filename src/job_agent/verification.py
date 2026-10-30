@@ -25,6 +25,8 @@ from src.job_agent.eligibility import (
     extract_experience_requirements,
     extract_graduation_batches,
     extract_matched_skills,
+    is_location_eligible_for_target_country,
+    is_non_tech_role,
     sanitize_job_text,
 )
 from src.job_agent.logging_config import logger
@@ -56,12 +58,18 @@ BANNED_AGGREGATORS = {
 # Recognized trusted ATS hostnames and parent domains
 TRUSTED_ATS_DOMAINS = {
     "jobs.ashbyhq.com": "Ashby",
+    "ashbyhq.com": "Ashby",
     "boards.greenhouse.io": "Greenhouse",
+    "greenhouse.io": "Greenhouse",
     "jobs.lever.co": "Lever",
+    "lever.co": "Lever",
     "myworkdayjobs.com": "Workday",
     "smartrecruiters.com": "SmartRecruiters",
     "icims.com": "iCIMS",
     "workable.com": "Workable",
+    "darwinbox.in": "Darwinbox",
+    "darwinbox.com": "Darwinbox",
+    "keka.com": "Keka",
 }
 
 # Recognized official employer domains (and their subdomains)
@@ -81,6 +89,7 @@ RECOGNIZED_EMPLOYER_DOMAINS = {
     "meta.com": "Meta",
     "uber.com": "Uber",
     "swiggy.in": "Swiggy",
+    "swiggy.com": "Swiggy",
     "zeptonow.com": "Zepto",
     "razorpay.com": "Razorpay",
     "phonepe.com": "PhonePe",
@@ -89,6 +98,30 @@ RECOGNIZED_EMPLOYER_DOMAINS = {
     "flipkart.com": "Flipkart",
     "zomato.com": "Zomato",
     "cred.club": "CRED",
+    "paytm.com": "Paytm",
+    "meesho.com": "Meesho",
+    "sarvam.ai": "Sarvam AI",
+    "atlan.com": "Atlan",
+    "signoz.io": "SigNoz",
+    "porter.in": "Porter",
+    "fampay.in": "FamPay",
+    "groww.in": "Groww",
+    "pocketfm.com": "Pocket FM",
+    "instawork.com": "Instawork",
+    "inmobi.com": "InMobi",
+    "hackerrank.com": "HackerRank",
+    "thoughtworks.com": "Thoughtworks",
+    "rubrik.com": "Rubrik",
+    "fi.money": "Fi Money",
+    "sliceit.com": "Slice",
+    "zerodha.com": "Zerodha",
+    "urbancompany.com": "Urban Company",
+    "delhivery.com": "Delhivery",
+    "lenskart.com": "Lenskart",
+    "atherenergy.com": "Ather Energy",
+    "cashfree.com": "Cashfree",
+    "juspay.in": "Juspay",
+    "bharatpe.com": "BharatPe",
 }
 
 # Tracking and analytics query parameters stripped during normalization
@@ -358,7 +391,8 @@ class JobVerifier:
         senior_indicators = [
             r"\bsenior\b", r"\bsr\.?\b", r"\blead\b", r"\bprincipal\b", r"\bstaff\b",
             r"\barchitect\b", r"\bdirector\b", r"\bmanager\b", r"\bvp\b", r"\bvice president\b",
-            r"\bhead of\b", r"\b5\+\s*years?\b", r"\b4\+\s*years?\b", r"\b3\+\s*years?\b"
+            r"\bhead of\b", r"\bdgm\b", r"\bagm\b", r"\bgeneral manager\b",
+            r"\b5\+\s*years?\b", r"\b4\+\s*years?\b", r"\b3\+\s*years?\b"
         ]
         has_fresher_term = any(t in lower_title for t in ("intern", "fresher", "trainee", "entry", "graduate", "0-1", "junior", "ase", "get"))
         if not has_fresher_term and any(re.search(pat, lower_title) for pat in senior_indicators):
@@ -371,6 +405,41 @@ class JobVerifier:
                 evidence,
                 f"Senior role: {raw_job.title}"
             )
+
+        # -------------------------------------------------------------
+        # Fast Pre-Filter: Non-tech role filter (copywriters, illustrators, etc.)
+        # -------------------------------------------------------------
+        if settings.exclude_non_tech_roles and is_non_tech_role(raw_job.title):
+            evidence["rejection_reasons"].append(f"Non-technical role excluded: '{raw_job.title}'")
+            return self._build_rejected_job(
+                raw_job,
+                norm_url,
+                source_domain,
+                VerificationStatus.REJECTED_PROFILE,
+                evidence,
+                f"Non-technical role: {raw_job.title}"
+            )
+
+        # -------------------------------------------------------------
+        # Fast Pre-Filter: Target country location check (India)
+        # -------------------------------------------------------------
+        if settings.enforce_india_location:
+            is_loc_ok, loc_reason = is_location_eligible_for_target_country(
+                raw_job.location,
+                raw_job.title,
+                raw_job.description or "",
+                target_country=self.profile.primary_country
+            )
+            if not is_loc_ok:
+                evidence["rejection_reasons"].append(f"Location rejected: {loc_reason}")
+                return self._build_rejected_job(
+                    raw_job,
+                    norm_url,
+                    source_domain,
+                    VerificationStatus.REJECTED_PROFILE,
+                    evidence,
+                    loc_reason
+                )
 
         # -------------------------------------------------------------
         # Check 3 & 4: Live Activity & Redirect Safety Validation

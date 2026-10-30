@@ -59,6 +59,12 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TARGET_GRADUATION_BATCH: ${{ vars.TARGET_GRADUATION_BATCH || '2027' }}
+          TARGET_COUNTRY: ${{ vars.TARGET_COUNTRY || 'India' }}
+          ENFORCE_INDIA_LOCATION: ${{ vars.ENFORCE_INDIA_LOCATION || 'true' }}
+          EXCLUDE_NON_TECH_ROLES: ${{ vars.EXCLUDE_NON_TECH_ROLES || 'true' }}
+          MAX_JOBS_PER_COMPANY: ${{ vars.MAX_JOBS_PER_COMPANY || '2' }}
+          MAX_DAILY_ALERTS: ${{ vars.MAX_DAILY_ALERTS || '15' }}
           SEARCH_PROVIDER: ${{ vars.SEARCH_PROVIDER || 'ats_direct' }}
           SEARCH_API_KEY: ${{ secrets.SEARCH_API_KEY }}
           SEARCH_ENGINE_ID: ${{ secrets.SEARCH_ENGINE_ID }}
@@ -81,6 +87,11 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TARGET_GRADUATION_BATCH: ${{ vars.TARGET_GRADUATION_BATCH || '2027' }}
+          TARGET_COUNTRY: ${{ vars.TARGET_COUNTRY || 'India' }}
+          ENFORCE_INDIA_LOCATION: ${{ vars.ENFORCE_INDIA_LOCATION || 'true' }}
+          EXCLUDE_NON_TECH_ROLES: ${{ vars.EXCLUDE_NON_TECH_ROLES || 'true' }}
+          MAX_JOBS_PER_COMPANY: ${{ vars.MAX_JOBS_PER_COMPANY || '2' }}
+          MAX_DAILY_ALERTS: ${{ vars.MAX_DAILY_ALERTS || '15' }}
           SEARCH_PROVIDER: ${{ vars.SEARCH_PROVIDER || 'ats_direct' }}
           SEARCH_API_KEY: ${{ secrets.SEARCH_API_KEY }}
           SEARCH_ENGINE_ID: ${{ secrets.SEARCH_ENGINE_ID }}

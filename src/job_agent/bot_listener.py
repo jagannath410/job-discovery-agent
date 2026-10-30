@@ -127,36 +127,14 @@ class TelegramBotListener:
             self._send_reply(msg)
 
         elif command == "/run":
-            self._send_reply("🚀 <b>Job Discovery Initiated!</b>\nScanning verified ATS feeds & employer portals... You will receive matches in a moment.")
+            self._send_reply("🚀 <b>Job Discovery Initiated!</b>\nScanning verified Indian startup & tech feeds... You will receive matches in a moment.")
             try:
-                # Import pipeline lazily to avoid circular imports
-                from src.job_agent.discovery import DiscoveryEngine
-                from src.job_agent.verification import VerificationEngine
-                from src.job_agent.scoring import score_job
-                from src.job_agent.models import VerificationStatus
-
-                engine = DiscoveryEngine()
-                verifier = VerificationEngine()
-                candidates, _ = engine.run_discovery()
-
-                new_matches = []
-                for raw in candidates:
-                    v_res = verifier.verify_posting(raw)
-                    score, breakdown, explanation = score_job(v_res)
-                    v_res.relevance_score = score
-                    v_res.relevance_breakdown = breakdown
-                    v_res.relevance_explanation = explanation
-
-                    is_new, _ = self.db.upsert_job(v_res)
-                    if v_res.verification_status == VerificationStatus.VERIFIED_ACTIVE and score >= settings.min_relevance_score:
-                        new_matches.append(v_res)
-
-                unalerted = self.db.get_unalerted_verified_jobs(min_score=settings.min_relevance_score)
-                if unalerted:
-                    sent, failed = self.notifier.dispatch_daily_report(unalerted)
-                    self._send_reply(f"✅ <b>Discovery Complete!</b>\nDispatched {sent} verified opportunities to your chat.")
+                from main import run_pipeline
+                exit_code = run_pipeline(dry_run=False)
+                if exit_code == 0:
+                    self._send_reply("✅ <b>Discovery Complete!</b>\nNew verified opportunities have been processed and dispatched to your chat.")
                 else:
-                    self._send_reply("✅ <b>Discovery Complete!</b>\nAll eligible jobs are already up to date. No new listings found right now.")
+                    self._send_reply("⚠️ <b>Discovery Completed with notices.</b> Check system logs for details.")
             except Exception as exc:
                 logger.error(f"Error during on-demand run: {exc}", exc_info=True)
                 self._send_reply(f"⚠️ Error executing discovery: {html.escape(str(exc))}")
