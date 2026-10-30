@@ -52,13 +52,13 @@ class Settings(BaseSettings):
     lookback_hours: int = Field(default=48, alias="LOOKBACK_HOURS")
 
     # 4. Filters & Delivery
-    min_relevance_score: int = Field(default=60, alias="MIN_RELEVANCE_SCORE")
+    min_relevance_score: int = Field(default=55, alias="MIN_RELEVANCE_SCORE")
     send_empty_report: bool = Field(default=True, alias="SEND_EMPTY_REPORT")
     include_unconfirmed_alerts: bool = Field(default=False, alias="INCLUDE_UNCONFIRMED_ALERTS")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
     # 5. Candidate Profile Customization
-    target_graduation_batch: int = Field(default=2026, alias="TARGET_GRADUATION_BATCH")
+    target_graduation_batch: int = Field(default=2027, alias="TARGET_GRADUATION_BATCH")
     target_country: str = Field(default="India", alias="TARGET_COUNTRY")
 
     # 6. Scoring Weights

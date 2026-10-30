@@ -80,13 +80,14 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TARGET_GRADUATION_BATCH: ${{ vars.TARGET_GRADUATION_BATCH || '2027' }}
           SEARCH_PROVIDER: ${{ vars.SEARCH_PROVIDER || 'ats_direct' }}
           SEARCH_API_KEY: ${{ secrets.SEARCH_API_KEY }}
           SEARCH_ENGINE_ID: ${{ secrets.SEARCH_ENGINE_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DATABASE_PATH: data/jobs_cache.db
           SEND_EMPTY_REPORT: "true"
-          MIN_RELEVANCE_SCORE: "60"
+          MIN_RELEVANCE_SCORE: ${{ vars.MIN_RELEVANCE_SCORE || '55' }}
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             python main.py --dry-run
